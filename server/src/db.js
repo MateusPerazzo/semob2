@@ -13,6 +13,10 @@ export async function conectar() {
     await diasSistema().createIndex({ data: 1 }, { unique: true });
     await diasLinha().createIndex({ data: 1, 'linha.codigo': 1 }, { unique: true });
     await falhasViagem().createIndex({ data: 1 });
+    await usuarios().createIndex({ email: 1 }, { unique: true });
+    await sessoes().createIndex({ token: 1 }, { unique: true });
+    // O MongoDB apaga sozinho as sessões vencidas.
+    await sessoes().createIndex({ expiraEm: 1 }, { expireAfterSeconds: 0 });
   }
   return db;
 }
@@ -35,4 +39,14 @@ export function diasLinha() {
 // Viagens não realizadas, não iniciadas ou não terminadas.
 export function falhasViagem() {
   return db.collection('viagens_falhas');
+}
+
+// Contas da plataforma e solicitações de acesso (não são apagadas pelo importador).
+export function usuarios() {
+  return db.collection('usuarios');
+}
+
+// Sessões abertas no login; guarda só o hash do token.
+export function sessoes() {
+  return db.collection('sessoes');
 }

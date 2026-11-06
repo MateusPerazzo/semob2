@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 
 import { detectarAnomalias } from './anomalias.js';
+import { configurarContasDemo, exigirLogin, rotasAuth, rotasUsuarios } from './auth.js';
 import { conectar, diasLinha, diasSistema, falhasViagem } from './db.js';
 import {
   DIAS_POR_PERIODO,
@@ -16,6 +17,7 @@ const TARIFA = Number(process.env.TARIFA ?? 5);
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 const TURNOS = ['manha', 'tarde', 'noite'];
 
@@ -114,6 +116,31 @@ async function lerParametros(req, res) {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/api/auth', rotasAuth);
+app.use('/api/usuarios', rotasUsuarios);
+
+// Números da tela de login (públicos): linhas que rodaram e cumprimento nos últimos 30 dias.
+app.get('/api/destaques', async (req, res) => {
+  const ultimo = await diasSistema().find().sort({ data: -1 }).limit(1).next();
+  if (!ultimo) return res.json({ linhasAtivas: null, cumprimento: null, dadosAte: null });
+
+  const mes = janela('mensal', ultimo.data);
+  const linhasAtivas = await diasLinha().distinct('linha.codigo', {
+    ...filtroJanela(mes),
+    'viagens.realizadas': { $gt: 0 },
+  });
+  const { viagensProgramadas, viagensRealizadas } = await totais(mes);
+
+  res.json({
+    linhasAtivas: linhasAtivas.length,
+    cumprimento: viagensProgramadas ? arredondar(viagensRealizadas / viagensProgramadas, 4) : null,
+    dadosAte: formatarData(ultimo.data),
+  });
+});
+
+// Daqui em diante, todas as rotas /api exigem login.
+app.use('/api', exigirLogin);
 
 app.get('/api/resumo', async (req, res) => {
   const parametros = await lerParametros(req, res);
@@ -222,6 +249,7 @@ app.use((erro, req, res, next) => {
 const porta = Number(process.env.PORT ?? 3000);
 
 await conectar();
+await configurarContasDemo(process.env.PERFIS_DEMO !== 'false');
 app.listen(porta, () => {
   console.log(`API SEMOB rodando em http://localhost:${porta}`);
 });

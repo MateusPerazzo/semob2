@@ -1,19 +1,18 @@
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
 import '../models/operacao.dart';
+import 'api.dart';
 
 class OperacaoService {
-  // Para outro endereço: flutter run --dart-define=API_URL=http://10.0.2.2:3000
-  static const String baseUrl = String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://localhost:3000',
-  );
+  static const String baseUrl = apiUrl;
 
   final http.Client _client;
 
-  OperacaoService({http.Client? client}) : _client = client ?? http.Client();
+  /// Token da sessão; as rotas de dados exigem login.
+  final String? token;
+
+  OperacaoService({http.Client? client, this.token})
+      : _client = client ?? http.Client();
 
   Future<DadosPainel> buscarPainel(Periodo periodo) async {
     final periodoSerie = periodo == Periodo.diario ? Periodo.semanal : periodo;
@@ -69,16 +68,13 @@ class OperacaoService {
         .toList();
   }
 
-  Future<dynamic> _get(String caminho, Periodo periodo) async {
-    final uri = Uri.parse('$baseUrl$caminho').replace(
-      queryParameters: {'periodo': periodo.name},
+  Future<dynamic> _get(String caminho, Periodo periodo) {
+    return requisitarApi(
+      _client,
+      'GET',
+      caminho,
+      token: token,
+      query: {'periodo': periodo.name},
     );
-    final resposta = await _client.get(uri);
-    final corpo = jsonDecode(utf8.decode(resposta.bodyBytes));
-
-    if (resposta.statusCode != 200) {
-      throw Exception(corpo['erro'] ?? 'Erro ${resposta.statusCode}');
-    }
-    return corpo;
   }
 }

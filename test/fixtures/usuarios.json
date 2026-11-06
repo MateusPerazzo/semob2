@@ -1,0 +1,42 @@
+[
+  {
+    "id": "6aedcebd35eac061583f5b7b",
+    "nome": "Maria Aparecida dos Santos",
+    "email": "maria.santos@saocaetanodosul.sp.gov.br",
+    "perfil": "financeiro",
+    "status": "pendente",
+    "criadoEm": "2026-11-06T12:57:33.489Z"
+  },
+  {
+    "id": "6aedcebd35eac061583f5b7c",
+    "nome": "João Pereira",
+    "email": "joao.pereira@saocaetanodosul.sp.gov.br",
+    "perfil": "operacoes",
+    "status": "recusado",
+    "criadoEm": "2026-11-05T10:12:00.000Z"
+  },
+  {
+    "id": "6aedce602269f081cf1dbe9f",
+    "nome": "Equipe Financeira",
+    "email": "financeiro@semob.scs.gov.br",
+    "perfil": "financeiro",
+    "status": "aprovado",
+    "criadoEm": "2026-11-06T12:56:00.921Z"
+  },
+  {
+    "id": "6aedce602269f081cf1dbe9e",
+    "nome": "Equipe de Operações",
+    "email": "operacoes@semob.scs.gov.br",
+    "perfil": "operacoes",
+    "status": "aprovado",
+    "criadoEm": "2026-11-06T12:56:00.733Z"
+  },
+  {
+    "id": "6aedce602269f081cf1dbe9d",
+    "nome": "Gestor Municipal",
+    "email": "gestor@semob.scs.gov.br",
+    "perfil": "gestor",
+    "status": "aprovado",
+    "criadoEm": "2026-11-06T12:56:00.576Z"
+  }
+]

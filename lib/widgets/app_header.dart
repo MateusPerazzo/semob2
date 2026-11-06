@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../models/usuario.dart';
 import '../theme/tema.dart';
 
 class AbaMenu {
   final String rotulo;
   final IconData icone;
 
-  const AbaMenu(this.rotulo, this.icone);
+  /// Número em destaque ao lado do rótulo (ex.: solicitações pendentes).
+  final int contador;
+
+  const AbaMenu(this.rotulo, this.icone, {this.contador = 0});
 }
 
 class AppHeader extends StatelessWidget {
@@ -18,11 +22,16 @@ class AppHeader extends StatelessWidget {
   final String? situacaoDados;
   final bool erro;
 
+  final Usuario usuario;
+  final VoidCallback onSair;
+
   const AppHeader({
     super.key,
     required this.abas,
     required this.abaSelecionada,
     required this.onSelecionarAba,
+    required this.usuario,
+    required this.onSair,
     this.situacaoDados,
     this.erro = false,
   });
@@ -79,6 +88,12 @@ class AppHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   _situacao(compacto: MediaQuery.sizeOf(context).width < 640),
+                  const SizedBox(width: 12),
+                  _MenuUsuario(
+                    usuario: usuario,
+                    onSair: onSair,
+                    compacto: MediaQuery.sizeOf(context).width < 900,
+                  ),
                 ],
               ),
             ),
@@ -213,10 +228,127 @@ class AppHeader extends StatelessWidget {
                     fontWeight: selecionada ? FontWeight.w700 : FontWeight.w600,
                   ),
                 ),
+                if (aba.contador > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Cores.alertaClaro,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${aba.contador}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Iniciais do usuário logado; o menu mostra nome, perfil e "Sair".
+class _MenuUsuario extends StatelessWidget {
+  final Usuario usuario;
+  final VoidCallback onSair;
+  final bool compacto;
+
+  const _MenuUsuario({
+    required this.usuario,
+    required this.onSair,
+    required this.compacto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iniciais = Container(
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        usuario.iniciais,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+
+    return PopupMenuButton<void>(
+      tooltip: 'Conta',
+      offset: const Offset(0, 48),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      itemBuilder: (context) => [
+        PopupMenuItem<void>(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(usuario.nome, style: Estilos.celulaDestaque),
+              Text(usuario.email, style: Estilos.subtituloPainel),
+              const SizedBox(height: 4),
+              Text(usuario.perfil.rotulo, style: Estilos.celula),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<void>(
+          onTap: onSair,
+          child: const Row(
+            children: [
+              Icon(Icons.logout, size: 18, color: Cores.textoSecundario),
+              SizedBox(width: 10),
+              Text('Sair'),
+            ],
+          ),
+        ),
+      ],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          iniciais,
+          if (!compacto) ...[
+            const SizedBox(width: 10),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    usuario.nome,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    usuario.perfil.rotulo,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFFC9D8EC), fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+          ],
+        ],
       ),
     );
   }

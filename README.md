@@ -41,6 +41,32 @@ Pré-requisitos: Flutter, Node.js 22+ e MongoDB rodando em `127.0.0.1:27017`.
 Para apontar o app para outra API: `flutter run --dart-define=API_URL=http://endereco:3000`
 (no emulador Android use `http://10.0.2.2:3000`).
 
+## Login e perfis
+
+O app abre na tela de login. As contas ficam na coleção `usuarios` do MongoDB
+(senhas com hash scrypt) e cada login abre uma sessão de 8 horas na coleção `sessoes`.
+
+| Perfil | Abas |
+| --- | --- |
+| Gestor Municipal | todas + **Usuários** (aprova, recusa e revoga contas) |
+| Equipe de Operações | Visão geral, Operações, Anomalias |
+| Equipe Financeira | Visão geral, Passagens, Finanças |
+
+- **Criar conta** envia uma solicitação pendente. A pessoa só entra depois que um
+  gestor aprova na aba Usuários, onde também pode trocar o perfil pedido.
+- As rotas de dados exigem login. A divisão por abas é feita no app; só a gestão
+  de contas é restrita ao gestor também na API.
+- **Contas de teste** (senha `semob2026`): `gestor@`, `operacoes@` e
+  `financeiro@semob.scs.gov.br`. São criadas ao subir a API e aparecem na tela de login.
+
+Na versão final, sem contas de teste:
+
+1. `PERFIS_DEMO=false` no `server/.env`: as contas de teste são apagadas ao subir a API.
+2. `flutter run --dart-define=PERFIS_DEMO=false`: esconde os perfis da tela de login.
+3. Crie o primeiro gestor: `npm run criar-gestor -- "Nome Completo" email senha` (pasta `server`).
+
+Ainda não há recuperação de senha pelo app.
+
 ## Dados
 
 A pasta `dados/` tem os relatórios do **Smart Report** (Smart Data) enviados pela
@@ -74,12 +100,24 @@ Limitações dos relatórios:
 
 ## Endpoints
 
-Todos aceitam `periodo=diario|semanal|mensal` (janelas móveis de 1, 7 e 30 dias)
-e `data=AAAA-MM-DD` opcional (padrão: último dia com registros).
+Rotas públicas e de conta:
 
 | Rota | Retorno |
 | --- | --- |
 | `GET /api/health` | status da API |
+| `GET /api/destaques` | linhas ativas e cumprimento dos últimos 30 dias (tela de login) |
+| `POST /api/auth/login` | `{email, senha}` → `{token, usuario}` |
+| `POST /api/auth/solicitar` | `{nome, email, perfil, senha}` → cria conta pendente |
+| `GET /api/auth/eu` · `POST /api/auth/sair` | usuário da sessão · encerra a sessão |
+| `GET /api/usuarios` | contas e solicitações (só gestor) |
+| `PATCH /api/usuarios/:id` | `{status: aprovado\|recusado, perfil?}` (só gestor) |
+
+As rotas de dados exigem `Authorization: Bearer <token>`, aceitam
+`periodo=diario|semanal|mensal` (janelas móveis de 1, 7 e 30 dias) e
+`data=AAAA-MM-DD` opcional (padrão: último dia com registros).
+
+| Rota | Retorno |
+| --- | --- |
 | `GET /api/resumo` | totais do sistema no período e no período anterior |
 | `GET /api/serie` | totais do sistema por dia |
 | `GET /api/linhas` | km e viagens por linha |
@@ -107,5 +145,7 @@ flutter test
 
 `test/home_page_test.dart` abre todas as abas nos três períodos, em tela de
 desktop e de celular, usando respostas salvas da API (`test/fixtures/`), e
-falha se algum layout estourar. Depois de mudar a API, atualize os fixtures
+falha se algum layout estourar. Também confere as abas de cada perfil e a
+aprovação de uma solicitação. `test/login_page_test.dart` cobre a tela de login
+e o cadastro. Depois de mudar a API, atualize os fixtures
 salvando de novo as respostas de `/api/*`.
